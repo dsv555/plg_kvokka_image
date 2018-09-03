@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<extension type="plugin" version="3.0" method="upgrade" group="system">
+    <name>Kvokka Image</name>
+    <author>dsv</author>
+    <authorEmail>dsv.95@yandex.ru</authorEmail>
+    <creationDate>2018-08-22</creationDate>
+    <version>1.0.6</version>
+    <description>PLG_KVOKKA_IMAGES_DESC</description>
+    <files>
+        <filename plugin="kvokka_image">kvokka_image.php</filename>
+        <folder>lib</folder>
+        <folder>media</folder>
+    </files>
+    <languages folder="language">
+        <language tag="ru-RU">ru-RU/ru-RU.plg_system_kvokka_image.ini</language>
+        <language tag="ru-RU">ru-RU/ru-RU.plg_system_kvokka_image.sys.ini</language>
+    </languages>
+    <updateservers>
+        <server type="extension" name="Kvokka Updates (Kvokka Images)">http://update.kvokka.com/info/plg_kvokka_image</server>
+    </updateservers>
+    <config>
+        <fields name="params">
+            <fieldset name="advanced">
+                <field name="default_img" type="media" label="PLG_KVOKKA_IMAGES_DEFAULT_IMG" />
+                <field name="watermark_img" type="media" label="PLG_KVOKKA_IMAGES_WATERMARK_IMG" />
+            </fieldset>
+        </fields>
+    </config>
+</extension>
