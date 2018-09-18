@@ -6,17 +6,27 @@ jimport('joomla.image.image');
 
 class KvokkaImage extends KvokkaImageBase
 {
-    public $scale; // Напровление маштобирования
-    public $crop; // Обрезать по размерам
-    public $default; // Возрощать изображение по умолчанию если произошла ошибка  маштобировани
-    public $wt; // Добавлять водяной знак
-    public $wtHeight; // Высота водяного знака
-    public $wtWidth; // Ширена водяного знака
-    public $wtScale; // Напровление маштобирования водяного знака
-    public $wtRigth; // Отступ с права
-    public $wtBottom; // Отступ с низу
-    public $wtCenter; // Выровнять по центру, отменяет $wtBottom и $wtRight
-    public $wtOpacity; // Прозрачность водяного знака
+    protected $scale; // Напровление маштобирования
+    protected $crop; // Обрезать по размерам
+    protected $loadDefault; // Возрощать изображение по умолчанию если произошла ошибка при маштобировани
+
+    protected $wt; // Добавлять водяной знак
+    protected $wtHeight; // Высота водяного знака
+    protected $wtWidth; // Ширена водяного знака
+    protected $wtScale; // Напровление маштобирования водяного знака
+    protected $wtRigth; // Отступ с права
+    protected $wtBottom; // Отступ с низу
+    protected $wtCenter; // Выровнять по центру, отменяет $wtBottom и $wtRight
+    protected $wtOpacity; // Прозрачность водяного знака
+
+    protected $srcWatermark; // Водянои занк
+    protected $srcDefault; // Изображение по умолчанию
+
+    protected $cachePathToFile; // Путь к кэшированому изображению
+    protected $cacheUrl; // URL к кэшированому изображению
+    protected $cacheName; // Имя кэшированого изображения
+
+    protected $originalPathToFIle; // Путь к исходному фаилу
 
     /**
      * @param string $src - url изображения
@@ -32,7 +42,8 @@ class KvokkaImage extends KvokkaImageBase
         $this->width = isset($settings['w']) ? (int) $settings['w'] : 1;
         $this->scale = isset($settings['scale']) ? $settings['scale'] : 'w';
         $this->crop = isset($settings['crop']) ? (bool) $settings['crop'] : false;
-        $this->default = isset($settings['def']) ? (bool) $settings['def'] : true;
+        $this->loadDefault = isset($settings['def']) ? (bool) $settings['def'] : true;
+
         $this->wt = isset($settings['wt']) ? (bool) $settings['wt'] : 0;
         $this->wtHeight = isset($settings['wth']) ? (int) $settings['wth'] : 0;
         $this->wtWidth = isset($settings['wtw']) ? (int) $settings['wtw'] : 0;
@@ -40,7 +51,28 @@ class KvokkaImage extends KvokkaImageBase
         $this->wtRigth = isset($settings['wtr']) ? (int) $settings['wtr'] : 10;
         $this->wtBottom = isset($settings['wtb']) ? (int) $settings['wtb'] : 10;
         $this->wtCenter = isset($settings['wtc']) ? (bool) $settings['wtc'] : false;
-        $this->wtOpacity = isset($settings['wto']) ? (int) $settings['wto'] : 60;
+        $this->wtOpacity = isset($settings['wto']) ? (int) $settings['wto'] : 65;
+
+        $this->srcDefault = isset($settings['defsrc']) ? $settings['defsrc'] : $this->param('watermark');
+        $this->srcWatermark = isset($settings['wtsrc']) ? $settings['wtsrc'] : $this->param('default');
+    }
+
+    /**
+     * @param string $src
+     * @return void
+     */
+    public function setWatermark($src)
+    {
+        $this->srcWatermark = $src;
+    }
+
+    /**
+     * @param string $src
+     * @return void
+     */
+    public function setDefault($src)
+    {
+        $this->srcDefault = $src;
     }
 
     /**
@@ -83,6 +115,7 @@ class KvokkaImage extends KvokkaImageBase
         // Абсолютный путь к исходному изображению
         $this->originalPathToFIle = str_replace('//', '/', JPATH_ROOT . '/' . $this->originalUrl);
 
+        $r = serialize($this);
         // Имя закэшированого изображения
         $this->cacheName = md5(serialize($this)) . '.' . JFile::getExt($this->originalPathToFIle);
 
@@ -118,11 +151,11 @@ class KvokkaImage extends KvokkaImageBase
         $outerSrc = $this->resizeImage();
 
         // Если не удалось создать изображние
-        if (!$outerSrc && !empty($this->default)) {
+        if (!$outerSrc && !empty($this->loadDefault) && !empty($this->srcDefault)) {
 
             $this->wt = false;
-            $this->default = false;
-            $this->originalUrl = $this->param('default');
+            $this->loadDefault = false;
+            $this->originalUrl = $this->srcDefault;
 
             $this->prepare();
 
@@ -170,14 +203,15 @@ class KvokkaImage extends KvokkaImageBase
 
         }
 
-        if ($this->wt && $this->param('watermark')) {
+        if ($this->wt && $this->srcWatermark) {
 
-            $watermarkPath = str_replace('//', '/', JPATH_ROOT . '/' . $this->param('watermark'));
-            if (!JFile::exists($watermarkPath)) {
+            $wtPath = str_replace('//', '/', JPATH_ROOT . '/' . $this->srcWatermark);
+
+            if (!JFile::exists($wtPath)) {
                 return false;
             }
 
-            $wt = new JImage($watermarkPath);
+            $wt = new JImage($wtPath);
 
             $this->wtHeight = !empty($this->wtHeight) ? $this->wtHeight : $this->width / 2;
             $this->wtWidth = !empty($this->wtWidth) ? $this->wtWidth : $this->width / 2;
