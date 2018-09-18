@@ -2,16 +2,18 @@
 
 abstract class KvokkaImageBase
 {
-    private $originalPathToFIle; // Путь к исходному фаилу
-    private $originalUrl; // URL к исходному фаилу
-	
-    private $cachePathToFile; // Путь к кэшированому изображению
-	private $cacheUrl; // URL к кэшированому изображению
-	private $cacheName; // Имя кэшированого изображения
-    private $cachePath; // Путь к директории кэша
- 
-    public $height; // Высота
-    public $width; // Ширена
+    protected $originalUrl; // URL к исходному фаилу
+    protected $cachePath; // Путь к директории кэша
+    protected $height; // Высота
+    protected $width; // Ширена
+
+    /**
+     *  Возрощает измененое изображение из кэша
+     *  или создает при необходимости
+     *
+     * @return string
+     */
+    abstract public function getCaheImage();
 
     /**
      * Задет директорию для кэширования
@@ -25,17 +27,15 @@ abstract class KvokkaImageBase
     }
 
     /**
-     *  Возрощает измененое изображение из кэша
-     *  или создает при необходимости и кэширует
+     * Размеры изображения
      *
-     * @return string
-     */
-    abstract public function getCaheImage();
-
-    /**
-     * Изменяет размеры изображения
-     *
+     * @param int $width
+     * @param int $height
      * @return void
      */
-    abstract public function resizeImage();
+    public function setSize($width, $height)
+    {
+        $this->width = $width;
+        $this->height = $height;
+    }
 }
