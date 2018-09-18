@@ -1,42 +1,33 @@
 <?php
 
-// No direct access
-defined('_JEXEC') or die;
-
 jimport('joomla.filesystem.folder');
 jimport('joomla.filesystem.file');
 jimport('joomla.image.image');
 
-class KvokkaImage
+class KvokkaImage extends KvokkaImageBase
 {
-    public $option; // Срока параметров
-    public $originalPathToFIle; // Путь к исходному фаилу
-    public $originalUrl; // URL к исходному фаилу
-    public $cacheName; // Имя кэшированого изображения
-    public $cachePath; // Путь к директории кэша
-    public $cachePathToFile; // Путь к кэшированому изображению
-    public $cacheUrl; // URL к кэшированому изображению
-    public $height; // Высота
-    public $width; // Ширена
-    public $scale; // Матод моштобирования
+    public $scale; // Напровление маштобирования
     public $crop; // Обрезать по размерам
-    public $default; // Возрощать изображение по умолчанию
+    public $default; // Возрощать изображение по умолчанию если произошла ошибка  маштобировани
     public $wt; // Добавлять водяной знак
     public $wtHeight; // Высота водяного знака
     public $wtWidth; // Ширена водяного знака
-    public $wtScale; // Маштабирование водяного знака
+    public $wtScale; // Напровление маштобирования водяного знака
     public $wtRigth; // Отступ с права
     public $wtBottom; // Отступ с низу
     public $wtCenter; // Выровнять по центру, отменяет $wtBottom и $wtRight
     public $wtOpacity; // Прозрачность водяного знака
 
-    public function __construct($src, $options)
+    /**
+     * @param string $src - url изображения
+     * @param array $options - параметры масштабирования
+     */
+    public function __construct($src = '', $options = '')
     {
+        parse_str(str_replace(' ', '', $options), $settings);
+
+        $this->cachePath = JPATH_CACHE . '/plg_kvokka_image/';
         $this->originalUrl = $src;
-        $this->option = str_replace(' ', '', $options);
-
-        parse_str($this->option, $settings);
-
         $this->height = isset($settings['h']) ? (int) $settings['h'] : 1;
         $this->width = isset($settings['w']) ? (int) $settings['w'] : 1;
         $this->scale = isset($settings['scale']) ? $settings['scale'] : 'w';
@@ -55,16 +46,16 @@ class KvokkaImage
     /**
      * Статический метод запуска
      *
-     * @param string $src
-     * @param string $options
+     * @param string $src - url изображения
+     * @param array $options - параметры масштабирования
      * @return string
      */
     public static function resize($src, $options)
     {
         $image = new self($src, $options);
-        $image->load();
+        $image->prepare();
 
-        return $image->getImage();
+        return $image->getCaheImage();
     }
 
     /**
@@ -72,11 +63,8 @@ class KvokkaImage
      *
      * @return void
      */
-    public function load($cPath = '/plg_kvokka_image/')
+    public function prepare()
     {
-        // Путь к директори закэшированых изображении
-        $this->cachePath = JPATH_CACHE . $cPath;
-
         // Создание директории для кэширования
         if (!JFolder::exists($this->cachePath)) {
             JFolder::create($this->cachePath);
@@ -89,21 +77,21 @@ class KvokkaImage
 
         // Загрузка изобрежения
         if (preg_match('#^http[s]*://#', $this->originalUrl)) {
-            $this->originalUrl = $this->loadOuterImg($this->originalUrl);
+            $this->originalUrl = $this->loadOuterImage($this->originalUrl);
         }
 
-        // Физически путь к исходному изображению
+        // Абсолютный путь к исходному изображению
         $this->originalPathToFIle = str_replace('//', '/', JPATH_ROOT . '/' . $this->originalUrl);
 
         // Имя закэшированого изображения
-        $this->cacheName = md5(urlencode($this->originalUrl) . $this->option) . '.' . JFile::getExt($this->originalPathToFIle);
+        $this->cacheName = md5(serialize($this)) . '.' . JFile::getExt($this->originalPathToFIle);
 
         // Путь к закэшированому изображению
         $this->cachePathToFile = $this->cachePath . $this->cacheName;
 
         // Url к закэшированому изображению
         $this->cacheUrl = str_replace(JPATH_ROOT, '', $this->cachePathToFile);
-        $this->cacheUrl = str_replace("\\", '/', $this->cacheUrl);
+        $this->cacheUrl = str_replace('\\', '/', $this->cacheUrl);
     }
 
     /**
@@ -112,7 +100,7 @@ class KvokkaImage
      *
      * @return string
      */
-    public function getImage()
+    public function getCaheImage()
     {
         if ($this->width == 0 && $this->height == 0) {
             return false;
@@ -136,7 +124,7 @@ class KvokkaImage
             $this->default = false;
             $this->originalUrl = $this->param('default');
 
-            $this->load();
+            $this->prepare();
 
             return $this->resizeImage();
         }
@@ -145,42 +133,80 @@ class KvokkaImage
     }
 
     /**
-     * Параметры плагина
+     * Изменяет размеры изображения
      *
-     * @param string $name
-     * @param mixed $default
-     * @return mixed
+     * @return void
      */
-    public function param($name, $default = false)
+    public function resizeImage()
     {
-        $plugin = JPluginHelper::getPlugin('system', 'kvokka_image');
-
-        if (isset($plugin->params) && !empty($plugin->params)) {
-            $params = json_decode($plugin->params);
-
-            switch ($name) {
-                case 'default':
-                    return !empty($params->default_img) ? $params->default_img : '/plugins/system/kvokka_image/media/noimage.png';
-                    break;
-                case 'watermark':
-                    return !empty($params->watermark_img) ? $params->watermark_img : $default;
-                    break;
-            }
+        // Проверка существования фаила
+        if (!JFile::exists($this->originalPathToFIle)) {
+            return false;
         }
 
-        return $default;
+        // Проверка типа
+        $type = exif_imagetype($this->originalPathToFIle);
+        if (!in_array($type, array(IMAGETYPE_GIF, IMAGETYPE_PNG, IMAGETYPE_JPEG))) {
+            return false;
+        }
+
+        // Загрузка исходного изображения
+        $image = new JImage($this->originalPathToFIle);
+
+        if (!$this->crop) {
+
+            if ($this->scale == 'h') {
+                $this->width = 10000;
+            }
+            if ($this->scale == 'w') {
+                $this->height = 1;
+            }
+
+            $image->resize($this->width, $this->height, false, $this->getScale($this->scale));
+
+        } else if ($this->crop) {
+
+            $image->cropResize($this->width, $this->height, false);
+
+        }
+
+        if ($this->wt && $this->param('watermark')) {
+
+            $watermarkPath = str_replace('//', '/', JPATH_ROOT . '/' . $this->param('watermark'));
+            if (!JFile::exists($watermarkPath)) {
+                return false;
+            }
+
+            $wt = new JImage($watermarkPath);
+
+            $this->wtHeight = !empty($this->wtHeight) ? $this->wtHeight : $this->width / 2;
+            $this->wtWidth = !empty($this->wtWidth) ? $this->wtWidth : $this->width / 2;
+
+            $wt->resize($this->wtWidth, $this->wtHeight, false, $this->getScale($this->wtScale));
+
+            if ($this->wtCenter) {
+                $this->wtBottom = $image->getHeight() / 2 - $wt->getHeight() / 2;
+                $this->wtRigth = $image->getWidth() / 2 - $wt->getWidth() / 2;
+            }
+
+            $image->watermark($wt, $this->wtOpacity, $this->wtBottom, $this->wtRigth);
+        }
+
+        $image->toFile($this->cachePathToFile, $type);
+
+        return $this->cacheUrl;
     }
 
     /**
      * Загружает изображение из внешнего источника и возрощает url для него
      *
-     * @param string $imgScr
+     * @param string $url
      * @return string
      */
-    protected function loadOuterImg($url)
+    private function loadOuterImage($url)
     {
         $isLoad = false;
-        $fileName = 'outer_' . md5(urlencode($url));
+        $fileName = 'outer_' . md5($url);
         $pathToFile = '';
 
         // Проверка загружено ли изображение
@@ -250,71 +276,18 @@ class KvokkaImage
         }
 
         $url = str_replace(JPATH_ROOT, '', $pathToFile);
-        $url = str_replace("\\", '/', $url);
+        $url = str_replace('\\', '/', $url);
 
         return $url;
     }
 
-    public function resizeImage()
-    {
-        // Проверка существования фаила
-        if (!JFile::exists($this->originalPathToFIle)) {
-            return false;
-        }
-
-        // Проверка типа
-        $type = exif_imagetype($this->originalPathToFIle);
-        if (!in_array($type, array(IMAGETYPE_GIF, IMAGETYPE_PNG, IMAGETYPE_JPEG))) {
-            return false;
-        }
-
-        // Загрузка исходного изображения
-        $image = new JImage($this->originalPathToFIle);
-
-        if (!$this->crop) {
-
-            if ($this->scale == 'h') {
-                $this->width = 10000;
-            }
-            if ($this->scale == 'w') {
-                $this->height = 1;
-            }
-            $image->resize($this->width, $this->height, false, $this->getScale($this->scale));
-
-        } else if ($this->crop) {
-
-            $image->cropResize($this->width, $this->height, false);
-
-        }
-
-        if ($this->wt && $this->param('watermark')) {
-
-            $watermarkPath = str_replace('//', '/', JPATH_ROOT . '/' . $this->param('watermark'));
-            if (!JFile::exists($watermarkPath)) {
-                return false;
-            }
-
-            $wt = new JImage($watermarkPath);
-
-            $this->wtHeight = !empty($this->wtHeight) ? $this->wtHeight : $this->width / 2;
-            $this->wtWidth = !empty($this->wtWidth) ? $this->wtWidth : $this->width / 2;
-
-            $wt->resize($this->wtWidth, $this->wtHeight, false, $this->getScale($this->wtScale));
-
-            if ($this->wtCenter) {
-                $this->wtBottom = $image->getHeight() / 2 - $wt->getHeight() / 2;
-                $this->wtRigth = $image->getWidth() / 2 - $wt->getWidth() / 2;
-            }
-
-            $image->watermark($wt, $this->wtOpacity, $this->wtBottom, $this->wtRigth);
-        }
-
-        $image->toFile($this->cachePathToFile, $type);
-
-        return $this->cacheUrl;
-    }
-
-    protected function getScale($name)
+    /**
+     * Метод маштобирования
+     *
+     * @param string $name
+     * @return int
+     */
+    private function getScale($name)
     {
         switch ($name) {
             case 'w':
@@ -330,5 +303,32 @@ class KvokkaImage
         }
 
         return $scale;
+    }
+
+    /**
+     * Параметры плагина
+     *
+     * @param string $name
+     * @param mixed $default
+     * @return mixed
+     */
+    private function param($name, $default = false)
+    {
+        $plugin = JPluginHelper::getPlugin('system', 'kvokka_image');
+
+        if (isset($plugin->params) && !empty($plugin->params)) {
+            $params = json_decode($plugin->params);
+
+            switch ($name) {
+                case 'default':
+                    return !empty($params->default_img) ? $params->default_img : '/plugins/system/kvokka_image/media/noimage.png';
+                    break;
+                case 'watermark':
+                    return !empty($params->watermark_img) ? $params->watermark_img : $default;
+                    break;
+            }
+        }
+
+        return $default;
     }
 }

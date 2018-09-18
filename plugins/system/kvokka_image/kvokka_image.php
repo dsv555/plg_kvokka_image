@@ -23,6 +23,7 @@ class PlgSystemKvokka_Image extends JPlugin
 
     public function onAfterInitialise()
     {
+        JLoader::register('KvokkaImageBase', JPATH_PLUGINS . '/system/kvokka_image/lib/KvokkaImageBase.php');
         JLoader::register('KvokkaImage', JPATH_PLUGINS . '/system/kvokka_image/lib/KvokkaImage.php');
     }
 }
