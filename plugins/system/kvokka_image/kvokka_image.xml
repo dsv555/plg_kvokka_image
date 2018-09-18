@@ -4,7 +4,7 @@
     <author>dsv</author>
     <authorEmail>dsv.95@yandex.ru</authorEmail>
     <creationDate>2018-09-21</creationDate>
-    <version>1..2.1</version>
+    <version>1.2.1</version>
     <description>PLG_KVOKKA_IMAGES_DESC</description>
     <files>
         <filename plugin="kvokka_image">kvokka_image.php</filename>
