@@ -153,7 +153,7 @@ class KvokkaImage
 
             $this->prepare();
 
-            return $this->resizeImage();
+            return $this->getCaheImage();
         }
 
         return $outerSrc;
