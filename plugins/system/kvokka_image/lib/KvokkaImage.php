@@ -52,7 +52,7 @@ class KvokkaImage
 
         $this->height = isset($settings['h']) ? (int) $settings['h'] : 1;
         $this->width = isset($settings['w']) ? (int) $settings['w'] : 1;
-        $this->quality = isset($settings['q']) ? (int) $settings['q'] : (int) $this->param('quality', 90);
+        $this->quality = isset($settings['q']) ? (int) $settings['q'] : (int) $this->param('quality', 75);
         $this->cachePath = isset($settings['path']) ? (string) $settings['path'] : JPATH_CACHE . '/plg_kvokka_image/';
         $this->scale = isset($settings['scale']) ? $settings['scale'] : 'w';
         $this->crop = isset($settings['crop']) ? (bool) $settings['crop'] : false;
@@ -138,7 +138,7 @@ class KvokkaImage
             $dateCache = filemtime($this->cachePathToFile);
             $dateOrigenal = filemtime($this->originalPathToFIle);
             if ($dateCache > $dateOrigenal) {
-                return $this->cacheUrl;
+                // return $this->cacheUrl;
             }
         }
 
@@ -221,9 +221,49 @@ class KvokkaImage
             $image->watermark($wt, $this->wtOpacity, $this->wtBottom, $this->wtRigth);
         }
 
-        $image->toFile($this->cachePathToFile, $type, array('quality' => $this->quality));
+        $image->toFile($this->cachePathToFile, $type, $this->getImageOptions($type));
 
         return $this->cacheUrl;
+    }
+
+    /**
+     * Возрощает параметры для изображения
+     *
+     * @param int $type
+     * @return array
+     */
+    private function getImageOptions($type)
+    {
+        $options = array();
+        // Стапень сжатия изображения
+        switch ($type) {
+
+            case IMAGETYPE_JPEG:
+
+                $options['quality'] = $this->quality;
+
+                break;
+
+            case IMAGETYPE_PNG:
+
+                $level = 0;
+                $pngQuality = array('9' => 0, '8' => 1, '7' => 2, '8' => 3, '6' => 4, '5' => 5, '4' => 6, '3' => 7, '2' => 8, '1' => 9);
+
+                if ($this->quality <= 10) {
+                    $level = 9;
+                } else {
+                    $ins = round($this->quality / 10);
+                    if ($ins !== 10) {
+                        $level = $pngQuality[$_ins];
+                    }
+                }
+
+                $options['quality'] = $level;
+
+                break;
+        }
+
+        return $options;
     }
 
     /**
