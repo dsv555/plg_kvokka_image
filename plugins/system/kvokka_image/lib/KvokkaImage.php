@@ -9,6 +9,8 @@ class KvokkaImage
     protected $height; // Высота
     protected $width; // Ширена
 
+    protected $quality; // Качество изображения
+
     protected $scale; // Напровление маштобирования
     protected $crop; // Обрезать по размерам
     protected $loadDefault; // Возрощать изображение по умолчанию если произошла ошибка при маштобировани
@@ -50,13 +52,12 @@ class KvokkaImage
 
         $this->height = isset($settings['h']) ? (int) $settings['h'] : 1;
         $this->width = isset($settings['w']) ? (int) $settings['w'] : 1;
-
-        $this->cachePath = isset($settings['path']) ? (string) $settings['path'] : JPATH_CACHE . '/plg_kvokka_image/';
-
+        $this->quality = isset($settings['q']) ? (int) $settings['q'] : (int) $this->param('quality', 90);
+        $this->cachePath = isset($settings['path']) ? (string) $settings['path'] : $this->param('cache-path');
         $this->scale = isset($settings['scale']) ? $settings['scale'] : 'w';
         $this->crop = isset($settings['crop']) ? (bool) $settings['crop'] : false;
         $this->loadDefault = isset($settings['def']) ? (bool) $settings['def'] : true;
-        $this->srcDefault = isset($settings['defsrc']) ? $settings['defsrc'] : $this->param('watermark');
+        $this->srcDefault = isset($settings['defsrc']) ? $settings['defsrc'] : $this->param('default');
 
         $this->wt = isset($settings['wt']) ? (bool) $settings['wt'] : 0;
         $this->wtHeight = isset($settings['wth']) ? (int) $settings['wth'] : 0;
@@ -66,7 +67,7 @@ class KvokkaImage
         $this->wtBottom = isset($settings['wtb']) ? (int) $settings['wtb'] : 10;
         $this->wtCenter = isset($settings['wtc']) ? (bool) $settings['wtc'] : false;
         $this->wtOpacity = isset($settings['wto']) ? (int) $settings['wto'] : 65;
-        $this->srcWatermark = isset($settings['wtsrc']) ? $settings['wtsrc'] : $this->param('default');
+        $this->srcWatermark = isset($settings['wtsrc']) ? $settings['wtsrc'] : $this->param('watermark');
     }
 
     /**
@@ -220,7 +221,7 @@ class KvokkaImage
             $image->watermark($wt, $this->wtOpacity, $this->wtBottom, $this->wtRigth);
         }
 
-        $image->toFile($this->cachePathToFile, $type);
+        $image->toFile($this->cachePathToFile, $type, array('quality' => $this->quality));
 
         return $this->cacheUrl;
     }
@@ -348,11 +349,17 @@ class KvokkaImage
             $params = json_decode($plugin->params);
 
             switch ($name) {
+
                 case 'default':
                     return !empty($params->default_img) ? $params->default_img : '/plugins/system/kvokka_image/media/noimage.png';
                     break;
+
                 case 'watermark':
                     return !empty($params->watermark_img) ? $params->watermark_img : $default;
+                    break;
+
+                case 'quality':
+                    return !empty($params->quality) ? $params->quality : $default;
                     break;
             }
         }
