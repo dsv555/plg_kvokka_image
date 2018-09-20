@@ -53,7 +53,7 @@ class KvokkaImage
         $this->height = isset($settings['h']) ? (int) $settings['h'] : 1;
         $this->width = isset($settings['w']) ? (int) $settings['w'] : 1;
         $this->quality = isset($settings['q']) ? (int) $settings['q'] : (int) $this->param('quality', 90);
-        $this->cachePath = isset($settings['path']) ? (string) $settings['path'] : $this->param('cache-path');
+        $this->cachePath = isset($settings['path']) ? (string) $settings['path'] : JPATH_CACHE . '/plg_kvokka_image/';
         $this->scale = isset($settings['scale']) ? $settings['scale'] : 'w';
         $this->crop = isset($settings['crop']) ? (bool) $settings['crop'] : false;
         $this->loadDefault = isset($settings['def']) ? (bool) $settings['def'] : true;
