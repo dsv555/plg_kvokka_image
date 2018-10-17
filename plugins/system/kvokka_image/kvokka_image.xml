@@ -3,8 +3,8 @@
     <name>Kvokka Image</name>
     <author>dsv</author>
     <authorEmail>dsv.95@yandex.ru</authorEmail>
-    <creationDate>2018-09-21</creationDate>
-    <version>1.4.0</version>
+    <creationDate>2018-10-17</creationDate>
+    <version>1.5.0</version>
     <description>PLG_KVOKKA_IMAGES_DESC</description>
     <files>
         <filename plugin="kvokka_image">kvokka_image.php</filename>
@@ -23,7 +23,7 @@
             <fieldset name="advanced">
                 <field name="default_img" type="media" label="PLG_KVOKKA_IMAGES_DEFAULT_IMG" />
                 <field name="watermark_img" type="media" label="PLG_KVOKKA_IMAGES_WATERMARK_IMG" />
-                <field name="quality" type="number" min="1" max="100" default='90' label="PLG_KVOKKA_IMAGES_QUALITY" />
+                <field name="quality" type="number" min="10" max="100" default='75' label="PLG_KVOKKA_IMAGES_QUALITY" />
             </fieldset>
         </fields>
     </config>
