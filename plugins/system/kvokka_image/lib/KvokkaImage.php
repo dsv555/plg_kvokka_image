@@ -130,15 +130,11 @@ class KvokkaImage
      */
     public function getCaheImage()
     {
-        if ($this->width == 0 && $this->height == 0) {
-            return false;
-        }
-
         if (JFile::exists($this->cachePathToFile)) {
             $dateCache = filemtime($this->cachePathToFile);
             $dateOrigenal = filemtime($this->originalPathToFIle);
             if ($dateCache > $dateOrigenal) {
-                // return $this->cacheUrl;
+                return $this->cacheUrl;
             }
         }
 
@@ -175,6 +171,19 @@ class KvokkaImage
         // Проверка типа
         $type = exif_imagetype($this->originalPathToFIle);
         if (!in_array($type, array(IMAGETYPE_GIF, IMAGETYPE_PNG, IMAGETYPE_JPEG))) {
+            return false;
+        }
+
+        if ($this->width == 0 && $this->height == 0) {
+            // Задает размеры оригенального изображения
+            $imgInfo = getimagesize($this->originalPathToFIle);
+            if ($imgInfo) {
+                $this->width = $imgInfo[0];
+                $this->height = $imgInfo[1];
+            }
+        }
+
+        if ($this->width == 0 && $this->height == 0) {
             return false;
         }
 
