@@ -3,8 +3,8 @@
     <name>Kvokka Image</name>
     <author>dsv</author>
     <authorEmail>dsv.95@yandex.ru</authorEmail>
-    <creationDate>2018-10-25</creationDate>
-    <version>1.6.2</version>
+    <creationDate>2018-10-26</creationDate>
+    <version>1.6.3</version>
     <description>PLG_KVOKKA_IMAGES_DESC</description>
     <files>
         <filename plugin="kvokka_image">kvokka_image.php</filename>

@@ -49,6 +49,7 @@ class KvokkaImageImagick extends KvokkaImageCore
             }
 
             $wt = new Imagick($wtPath);
+            $wt->evaluateImage(Imagick::EVALUATE_MULTIPLY, $this->wtOpacity / 100, Imagick::CHANNEL_ALPHA);
 
             $this->wtHeight = !empty($this->wtHeight) ? $this->wtHeight : $this->width / 2;
             $this->wtWidth = !empty($this->wtWidth) ? $this->wtWidth : $this->width / 2;
@@ -63,10 +64,6 @@ class KvokkaImageImagick extends KvokkaImageCore
             if ($this->wtCenter) {
                 $this->wtBottom = $image->getImageHeight() / 2 - $wt->getImageHeight() / 2;
                 $this->wtRigth = $image->getImageWidth() / 2 - $wt->getImageWidth() / 2;
-            }
-
-            if (method_exists($wt, 'setImageOpacity')) {
-                $wt->setImageOpacity($this->wtOpacity / 100);
             }
 
             $image->compositeImage($wt, imagick::COMPOSITE_OVER, $this->wtRigth, $this->wtBottom);
