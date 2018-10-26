@@ -66,6 +66,10 @@ class KvokkaImageImagick extends KvokkaImageCore
                 $this->wtRigth = $image->getImageWidth() / 2 - $wt->getImageWidth() / 2;
             }
 
+            if (in_array(strtolower($wt->getImageFormat()), array('jpg', 'jpeg'))) {
+                $wt->setImageOpacity($this->wtOpacity / 100);
+            }
+
             $image->compositeImage($wt, imagick::COMPOSITE_OVER, $this->wtRigth, $this->wtBottom);
         }
 
